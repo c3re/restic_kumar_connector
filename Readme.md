@@ -23,7 +23,7 @@ restic snapshots | curl -X POST -d @- http://restic_kumar_reporter/
 or
 
 ```bash
-restic snapshots | curl -X POST -d @- -u "$USER:$PASS" http://restic_kumar_reporter/
+restic snapshots | curl -X POST --data-binary @- -u "$USER:$PASS" http://restic_kumar_reporter/
 ```
 
 when RKC_USER and RKC_PASS are set.
