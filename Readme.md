@@ -34,6 +34,7 @@ Just point kumar to your webservice.
 The Output looks something like this:
 
 ```
+BACKUP|HOST|PATH|STATUS
 BACKUP|host1|/opt/mailcow|OK
 BACKUP|host1|/var/lib/docker/volumes|OK
 BACKUP|host2|/opt/docker|OK
@@ -45,6 +46,12 @@ BACKUP|host4|/var/lib/docker/volumes|OK
 BACKUP|host5|/opt/docker|TOO_OLD
 BACKUP|host5|/var/lib/docker/volumes|TOO_OLD
 
+BACKUP|HOST|STATUS
+BACKUP|host1|OK
+BACKUP|host2|OK
+BACKUP|host3|TOO_OLD
+BACKUP|host4|OK
+BACKUP|host5|TOO_OLD
 ```
 
 output is always sorted by host and path. so you might check a whole block of hosts at once.

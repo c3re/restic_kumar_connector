@@ -57,9 +57,32 @@ header("Content-Type: text/plain");
 $maxAge = isset($_GET["maxage"]) ? intval($_GET["maxage"]) : 28;
 $maxAge = $maxAge * 60 * 60;
 $backups = json_decode(file_get_contents("/var/www/data/backups.json"), true);
+echo "BACKUP|HOST|PATH|STATUS\n";
 foreach ($backups as $backupName => $backupTime) {
     echo "BACKUP|$backupName|";
     if ($backupTime + $maxAge < time()) {
+        echo "TOO_OLD";
+    } else {
+        echo "OK";
+    }
+    echo "\n";
+}
+
+$byHost = [];
+foreach ($backups as $backupName => $backupTime) {
+    $backupName = explode("|", $backupName);
+    $host = $backupName[0];
+    $path = $backupName[1];
+    if (!isset($byHost[$host])) {
+        $byHost[$host] = PHP_INT_MAX;
+    }
+    $byHost[$host] = min($backupTime, $byHost[$host]);
+}
+
+echo "\nBACKUP|HOST|STATUS\n";
+foreach ($byHost as $host => $latest) {
+    echo "BACKUP|$host|";
+    if ($latest + $maxAge < time()) {
         echo "TOO_OLD";
     } else {
         echo "OK";
