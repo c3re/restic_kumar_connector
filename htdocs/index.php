@@ -19,6 +19,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $resticData = file_get_contents("php://input");
     $resticData = explode("\n", $resticData);
+    if (count($resticData) <= 1) {
+        exit();
+    }
     $backups = [];
     foreach ($resticData as $snapshot) {
         if (
