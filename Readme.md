@@ -9,12 +9,23 @@ This is a restic connector for kumar. It allows you to check if you backups did 
 Just run the container, ideally using compose and expose port 80, maybe use something like traffic to make it https.
 You could add a volume to /var/www/data to persist the data.
 This is not necessary, but a fresh container will not report functional backups until you reported something.
-If it's nor prevented on a network level for the world to submit data, you might whant to set RKC_USER and RKC_PASS to prevent random people from submitting data.
+If it's not prevented on a network level for the world to submit data, you might want to use basic auth to prevent random people from submitting data.
 You need to use these credentials when reporting to the webservice.
+
+### authentication
+
+For backwards compatibility you can have a single user / repo setup by setting the ENV-vars `RKC_USER` and `RKC_PASS`.
+You should not use this, anymore on new setups.
+Instead, you should use the new multi-user setup.
+You have a single env-var for every user.
+The name of the env-var is `RKC_USER_<username>`, the value is the password.
+eg. to have 2 users, alice with the passwort secret and bob with the password hunter2, you would set the env-vars `RKC_USER_ALICE` and `RKC_USER_BOB` to `secret` and `hunter2`, respectively.
+usernames only support alphanumeric characters and underscores and minus, they are case-insensitive.
+There are no restrictions on passwords.
 
 ### Reporting
 
-To report your you need to post the output of `restic snapshots` to the webservice, eg:
+To report your snapshots, you need to post the output of `restic snapshots` to the webservice, eg:
 
 ```bash
 restic snapshots | curl -X POST -d @- http://restic_kumar_reporter/
@@ -31,6 +42,7 @@ when RKC_USER and RKC_PASS are set.
 ### Checking with kumar
 
 Just point kumar to your webservice.
+You need to add an query parameter ?u= and the username used.
 The Output looks something like this:
 
 ```

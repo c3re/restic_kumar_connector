@@ -1,21 +1,55 @@
 <?php
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $user = getenv("RKC_USER");
-    $pass = getenv("RKC_PASS");
-    if (false !== $user or false !== $pass) {
-        if (
-            !isset($_SERVER["PHP_AUTH_USER"]) ||
-            !isset($_SERVER["PHP_AUTH_PW"]) ||
-            $_SERVER["PHP_AUTH_USER"] !== $user ||
-            $_SERVER["PHP_AUTH_PW"] !== $pass
-        ) {
-            header('WWW-Authenticate: Basic realm="RKC"');
-            header("HTTP/1.0 401 Unauthorized");
-            echo "You are not authorized to access this page.";
+function checkAuth($user, $password, $credentials, $mode)
+{
+    if ($mode === "NO_AUTH") {
+        return true;
+    }
+    if (!isset($credentials[$user])) {
+        return false;
+    }
+    return $credentials[$user] === $password;
+}
+
+$credentials = [];
+$mode = "NO_AUTH";
+if (getenv("RKC_USER") !== false) {
+    $mode = "SINGLE_AUTH";
+    $credentials[getenv("RKC_USER")] = getenv("RKC_PASS");
+}
+foreach (getenv() as $k => $v) {
+    if (preg_match("/^RKC_USER_(.*)$/", $k, $m)) {
+        if ($mode === "SINGLE_AUTH") {
+            header("HTTP/1.0 500 Internal Server Error");
+            echo "single auth and multi auth is used at the same time";
             exit();
         }
+        $mode = "MULTI_AUTH";
+        $u = $m[1];
+        if (!preg_match("/^[a-zA-Z0-9_-]+$/", $k)) {
+            header("HTTP/1.0 500 Internal Server Error");
+            echo "invalid username, only a-zA-Z0-9 and _- are allowed";
+            exit();
+        }
+        $credentials[strtolower($u)] = $v;
     }
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (
+        checkAuth(
+            strtolower($_SERVER["PHP_AUTH_USER"] ?? null),
+            $_SERVER["PHP_AUTH_PW"] ?? null,
+            $credentials,
+            $mode
+        ) === false
+    ) {
+        header('WWW-Authenticate: Basic realm="RKC"');
+        header("HTTP/1.0 401 Unauthorized");
+        echo "You are not authorized to access this page.";
+        exit();
+    }
+    $fileName = $_SERVER["PHP_AUTH_USER"] . ".json";
 
     $resticData = file_get_contents("php://input");
     $resticData = explode("\n", $resticData);
@@ -51,15 +85,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     ksort($backups);
     file_put_contents(
-        "/var/www/data/backups.json",
+        "/var/www/data/$fileName",
         json_encode($backups, JSON_UNESCAPED_SLASHES + JSON_PRETTY_PRINT)
     );
     exit();
 }
+$fileName = $_GET["user"];
+if (!isset($credentials[$fileName])) {
+    header("HTTP/1.0 404 Not Found");
+    echo "user not found";
+    exit();
+}
+$fileName .= ".json";
 header("Content-Type: text/plain");
 $maxAge = isset($_GET["maxage"]) ? intval($_GET["maxage"]) : 28;
 $maxAge = $maxAge * 60 * 60;
-$backups = json_decode(file_get_contents("/var/www/data/backups.json"), true);
+$backups = json_decode(file_get_contents("/var/www/data/$fileName"), true);
 echo "BACKUP|HOST|PATH|STATUS\n";
 foreach ($backups as $backupName => $backupTime) {
     echo "BACKUP|$backupName|";
