@@ -90,13 +90,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     );
     exit();
 }
-$fileName = $_GET["user"];
-if (!isset($credentials[$fileName])) {
-    header("HTTP/1.0 404 Not Found");
-    echo "user not found";
-    exit();
+if ($mode === "NO_AUTH") {
+    $fileName = "backups.json";
+} else {
+    $fileName = $_GET["user"];
+    if (!isset($credentials[$fileName])) {
+        header("HTTP/1.0 404 Not Found");
+        echo "user not found";
+        exit();
+    }
+    $fileName .= ".json";
 }
-$fileName .= ".json";
+
 header("Content-Type: text/plain");
 $maxAge = isset($_GET["maxage"]) ? intval($_GET["maxage"]) : 28;
 $maxAge = $maxAge * 60 * 60;
