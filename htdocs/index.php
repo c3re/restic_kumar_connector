@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 if ($mode === "NO_AUTH") {
     $fileName = "backups.json";
 } else {
-    $fileName = $_GET["user"];
+    $fileName = strtolower($_GET["user"]);
     if (!isset($credentials[$fileName])) {
         header("HTTP/1.0 404 Not Found");
         echo "user not found";
