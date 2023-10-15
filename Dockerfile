@@ -9,4 +9,5 @@ ADD htdocs /var/www/html
 RUN mkdir /var/www/data
 RUN chown www-data:www-data /var/www/ -R
 EXPOSE 80
-CMD apachectl -D FOREGROUND
+ADD start.sh /usr/local/bin/start.sh
+CMD /usr/local/bin/start.sh
