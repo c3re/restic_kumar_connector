@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:13
 RUN apt-get update \
   && apt-get upgrade -y \
   && apt-get install -y apache2 php php-curl php-mbstring \

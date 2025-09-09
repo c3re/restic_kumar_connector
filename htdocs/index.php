@@ -37,12 +37,12 @@ foreach (getenv() as $k => $v) {
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (
-        checkAuth(
-            strtolower($_SERVER["PHP_AUTH_USER"] ?? null),
-            $_SERVER["PHP_AUTH_PW"] ?? null,
-            $credentials,
-            $mode
-        ) === false
+            checkAuth(
+                    strtolower($_SERVER["PHP_AUTH_USER"] ?? null),
+                    $_SERVER["PHP_AUTH_PW"] ?? null,
+                    $credentials,
+                    $mode
+            ) === false
     ) {
         header('WWW-Authenticate: Basic realm="RKC"');
         header("HTTP/1.0 401 Unauthorized");
@@ -51,43 +51,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     $fileName = $_SERVER["PHP_AUTH_USER"] . ".json";
 
-    $resticData = file_get_contents("php://input");
-    $resticData = explode("\n", $resticData);
-    if (count($resticData) <= 1) {
-        exit();
+    switch($_SERVER['CONTENT_TYPE']){
+        case "application/json":
+            require __DIR__ . "/json.php";
+            break;
+            default:
+            require __DIR__ . "/legacy.php";
+            break;
     }
-    $backups = [];
-    foreach ($resticData as $snapshot) {
-        if (
-            !preg_match(
-                "/^(?<id>[a-z0-9]{8}) +(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2}) +(?<hour>\d{2}):+(?<minute>\d{2}):+(?<second>\d{2}) +(?<host>[^ ]+) +(?<path>[^ ]+).*/",
-                $snapshot,
-                $m
-            )
-        ) {
-            continue;
-        }
-        $backupName = $m["host"] . "|" . $m["path"];
-        if (!isset($backups[$backupName])) {
-            $backups[$backupName] = 0;
-        }
-        $backupTime = mktime(
-            $m["hour"],
-            $m["minute"],
-            $m["second"],
-            $m["month"],
-            $m["day"],
-            $m["year"]
-        );
-        if ($backupTime > $backups[$backupName]) {
-            $backups[$backupName] = $backupTime;
-        }
-    }
-    ksort($backups);
-    file_put_contents(
-        "/var/www/data/$fileName",
-        json_encode($backups, JSON_UNESCAPED_SLASHES + JSON_PRETTY_PRINT)
-    );
+
     exit();
 }
 if ($mode === "NO_AUTH") {
